@@ -68,7 +68,10 @@ class plugin_neko_auto_avatar {
 			return $cache[$uid] = !$member || empty($member['avatarstatus']);
 		}
 		$_G['neko_av_probe'] = 1;
-		$real = (string)call_user_func_array('avatar', $args);
+		// ponytail: DIY block（block_thread 等）会以 avatarapi=true 调用 avatar()，核心返回
+		// /avatar/?uid= 路由地址，既不含 noavatar 也不含 avatar.php?uid=，探测会误判为有头像。
+		// 探测时固定用代理地址格式（不用调用方传入的 ucenterurl/avatarapi），保证结果可判定
+		$real = (string)avatar($uid, $args[1] ?? 'middle', $args[2] ?? 0);
 		unset($_G['neko_av_probe']);
 		$replace = str_contains($real, 'noavatar');
 		if(!$replace && str_contains($real, 'avatar.php?uid=')) {
