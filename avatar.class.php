@@ -71,10 +71,20 @@ class plugin_neko_auto_avatar {
 		$real = (string)call_user_func_array('avatar', $args);
 		unset($_G['neko_av_probe']);
 		$replace = str_contains($real, 'noavatar');
-		if(!$replace && str_contains($real, 'avatar.php?uid=') && function_exists('uc_check_avatar')) {
-			// 动态代理地址看不出结果，问 UCenter
-			// ponytail: 每 uid 每请求一次查询；量大可升级为持久缓存
-			$replace = !uc_check_avatar($uid, 'middle');
+		if(!$replace && str_contains($real, 'avatar.php?uid=')) {
+			// 动态代理地址不含存在性信息：优先查本机 UC 头像文件，目录不可见再问 UC API
+			$uid9 = sprintf('%09d', $uid);
+			$filepath = substr($uid9, 0, 3).'/'.substr($uid9, 3, 2).'/'.substr($uid9, 5, 2).'/'.substr($uid9, -2).'_avatar_middle.jpg';
+			$ucpath = (string)parse_url($real, PHP_URL_PATH);
+			$ucdir = $ucpath ? trim(dirname($ucpath), '/\\').'/' : '';
+			$ucdatafile = DISCUZ_ROOT.$ucdir.'data/avatar/'.$filepath;
+			if(is_dir(DISCUZ_ROOT.$ucdir.'data/avatar')) {
+				$replace = !file_exists($ucdatafile);
+			} else {
+				loaducenter();
+				// ponytail: 远程 UCenter 时每 uid 每请求一次 HTTP 查询；量大可升级为持久缓存
+				$replace = !function_exists('uc_check_avatar') || !uc_check_avatar($uid, 'middle');
+			}
 		}
 		return $cache[$uid] = $replace;
 	}
