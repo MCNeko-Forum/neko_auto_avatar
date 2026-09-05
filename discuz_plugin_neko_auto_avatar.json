@@ -10,7 +10,7 @@
       "datatables": "",
       "directory": "neko_auto_avatar/",
       "copyright": "",
-      "version": "1.3",
+      "version": "1.4",
       "__modules": [
         {
           "name": "avatar",

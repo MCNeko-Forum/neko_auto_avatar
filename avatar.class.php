@@ -9,6 +9,11 @@ class plugin_neko_auto_avatar {
 	function avatar($param) {
 		global $_G;
 
+		// 本方法内部探测用的 avatar() 调用：直接走核心原逻辑
+		if(!empty($_G['neko_av_probe'])) {
+			return '';
+		}
+
 		$args = $param['param'] ?? [];
 		$uid = abs(intval($args[0] ?? 0));
 		if(!$uid) {
@@ -16,7 +21,7 @@ class plugin_neko_auto_avatar {
 		}
 
 		$member = table_common_member::t()->fetch($uid);
-		if(!$member || self::has_avatar($uid, $member)) {
+		if(!$member || !self::core_shows_noavatar($uid, $args)) {
 			return '';
 		}
 
@@ -50,26 +55,27 @@ class plugin_neko_auto_avatar {
 		return '';
 	}
 
-	// 判断用户是否已有真实头像：仅当核心会回退到 noavatar 时才返回 false
-	static function has_avatar($uid, $member) {
+	// 核心是否会给该用户显示默认头像：用核心 avatar() 的返回结果判断
+	static function core_shows_noavatar($uid, $args) {
 		global $_G;
-		static $avtexist = [];
-		if(isset($avtexist[$uid])) {
-			return $avtexist[$uid];
+		static $cache = [];
+		if(isset($cache[$uid])) {
+			return $cache[$uid];
 		}
-		$exists = !empty($member['avatarstatus']);
-		if(!$exists) {
-			// 本地头像文件：核心静态判断 + data/avatar（第三方插件直接下载的头像不会更新 avatarstatus）
-			$uid9 = sprintf('%09d', $uid);
-			$filepath = substr($uid9, 0, 3).'/'.substr($uid9, 3, 2).'/'.substr($uid9, 5, 2).'/'.substr($uid9, -2).'_avatar_middle.jpg';
-			$exists = file_exists(DISCUZ_ROOT.$_G['setting']['avatarpath'].$filepath)
-				|| file_exists(DISCUZ_ROOT.'data/avatar/'.$filepath);
-			if(!$exists && empty($_G['setting']['avatarmethod']) && function_exists('uc_check_avatar')) {
-				// UCenter 动态模式兜底：向 UC 服务器查询头像是否存在
-				// ponytail: 每请求每个 uid 一次 HTTP 查询；头像多的页面可升级为持久缓存
-				$exists = (bool)uc_check_avatar($uid, 'middle');
-			}
+		if(!empty($_G['setting']['ftp']['on']) && $_G['setting']['ftp']['on'] == 2 && $_G['setting']['oss']['oss_avatar']) {
+			// ponytail: OSS 模式核心直接返回远程地址、不校验存在性，只能信 avatarstatus
+			$member = table_common_member::t()->fetch($uid);
+			return $cache[$uid] = !$member || empty($member['avatarstatus']);
 		}
-		return $avtexist[$uid] = $exists;
+		$_G['neko_av_probe'] = 1;
+		$real = (string)call_user_func_array('avatar', $args);
+		unset($_G['neko_av_probe']);
+		$replace = str_contains($real, 'noavatar');
+		if(!$replace && str_contains($real, 'avatar.php?uid=') && function_exists('uc_check_avatar')) {
+			// 动态代理地址看不出结果，问 UCenter
+			// ponytail: 每 uid 每请求一次查询；量大可升级为持久缓存
+			$replace = !uc_check_avatar($uid, 'middle');
+		}
+		return $cache[$uid] = $replace;
 	}
 }
