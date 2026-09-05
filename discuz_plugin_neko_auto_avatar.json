@@ -1,0 +1,63 @@
+{
+  "Title": "Discuz! Plugin",
+  "Data": {
+    "plugin": {
+      "available": "1",
+      "adminid": "1",
+      "name": "无头像自动头像",
+      "identifier": "neko_auto_avatar",
+      "description": "为没有上传头像的用户生成稳定的外部头像地址",
+      "datatables": "",
+      "directory": "neko_auto_avatar/",
+      "copyright": "",
+      "version": "1.1",
+      "__modules": [
+        {
+          "name": "avatar",
+          "menu": "",
+          "url": "",
+          "type": "11",
+          "adminid": "0",
+          "displayorder": "0"
+        },
+        {
+          "name": "mobile",
+          "menu": "",
+          "url": "",
+          "type": "28",
+          "adminid": "0",
+          "displayorder": "0"
+        }
+      ]
+    },
+    "version": "X5.0",
+    "var": [
+      {
+        "displayorder": "0",
+        "title": "头像地址开头",
+        "description": "默认使用 https://rca.mcneko.com/avatar.svg?seed=；可填写其他完整的地址开头",
+        "variable": "prefix",
+        "type": "text",
+        "extra": ""
+      },
+      {
+        "displayorder": "1",
+        "title": "头像地址结尾",
+        "description": "可选，直接拼接在中间值后面；留空则不显示结尾",
+        "variable": "suffix",
+        "type": "text",
+        "extra": ""
+      },
+      {
+        "displayorder": "2",
+        "title": "中间值",
+        "description": "用于生成稳定头像的值",
+        "variable": "seed_type",
+        "type": "select",
+        "extra": "uid=UID\nusername=用户名\nregdate=注册时间戳\nemail_base64=Base64邮箱"
+      }
+    ],
+    "intro": "用户没有头像时，使用可配置的外部头像地址；用户上传头像后恢复显示原头像。",
+    "uninstallfile": ""
+  }
+}
