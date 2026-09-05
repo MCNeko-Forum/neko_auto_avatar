@@ -59,16 +59,13 @@ class plugin_neko_auto_avatar {
 		}
 		$exists = !empty($member['avatarstatus']);
 		if(!$exists) {
-			if(!empty($_G['setting']['ftp']['on']) && $_G['setting']['ftp']['on'] == 2 && $_G['setting']['oss']['oss_avatar']) {
-				// ponytail: OSS 头像无法低成本验证存在性，沿用 avatarstatus 判断
-				$exists = false;
-			} elseif(!empty($_G['setting']['avatarmethod'])) {
-				// 静态头像模式：与核心 function_core.php avatar() 相同的路径与判断
-				$uid9 = sprintf('%09d', $uid);
-				$filepath = substr($uid9, 0, 3).'/'.substr($uid9, 3, 2).'/'.substr($uid9, 5, 2).'/'.substr($uid9, -2).'_avatar_middle.jpg';
-				$exists = file_exists(DISCUZ_ROOT.$_G['setting']['avatarpath'].$filepath);
-			} elseif(function_exists('uc_check_avatar')) {
-				// UCenter 动态模式：向 UC 服务器查询头像是否存在
+			// 本地头像文件：核心静态判断 + data/avatar（第三方插件直接下载的头像不会更新 avatarstatus）
+			$uid9 = sprintf('%09d', $uid);
+			$filepath = substr($uid9, 0, 3).'/'.substr($uid9, 3, 2).'/'.substr($uid9, 5, 2).'/'.substr($uid9, -2).'_avatar_middle.jpg';
+			$exists = file_exists(DISCUZ_ROOT.$_G['setting']['avatarpath'].$filepath)
+				|| file_exists(DISCUZ_ROOT.'data/avatar/'.$filepath);
+			if(!$exists && empty($_G['setting']['avatarmethod']) && function_exists('uc_check_avatar')) {
+				// UCenter 动态模式兜底：向 UC 服务器查询头像是否存在
 				// ponytail: 每请求每个 uid 一次 HTTP 查询；头像多的页面可升级为持久缓存
 				$exists = (bool)uc_check_avatar($uid, 'middle');
 			}
